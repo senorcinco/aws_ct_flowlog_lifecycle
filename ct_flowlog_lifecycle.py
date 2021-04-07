@@ -34,19 +34,19 @@ def list_stack_instance_by_account(target_session, stack_set_name, account_id):
     '''
     try:
         cfn_client = target_session.client('cloudformation')
-        stackset_result = cfn_client.list_stack_instances(
+        paginator = cfn_client.get_paginator('list_stack_instances')
+        response_iterator = paginator.paginate(
             StackSetName = stack_set_name,
-            StackInstanceAccount=account_id
-            )
+            StackInstanceAccount = account_id
+        )
         
-        if stackset_result and 'Summaries' in stackset_result:            
-            stackset_list = stackset_result['Summaries']
-            while 'NextToken' in stackset_result:
-                stackset_result = cfn_client.list_stackset_instance(
-                    NextToken = stackset_result['NextToken']
-                )
-                stackset_list.append(stackset_result['Summaries'])
-            
+        stackset_list = []
+        
+        for page in response_iterator:
+            for stackset in page["Summaries"]:
+                stackset_list.append(stackset)
+        
+        if stackset_list:    
             return stackset_list
         else:
             return False
